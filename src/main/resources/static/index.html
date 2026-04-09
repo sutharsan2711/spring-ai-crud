@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Spring AI CRUD</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; background:#f5f5f5; }
+        h1 { color: #333; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        button.danger { background: #e53935; }
+        button.info { background: #1976D2; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ddd; }
+        th { background: #4CAF50; color: white; }
+        img.thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; }
+        #aiResponse { background: #e8f5e9; padding: 15px; border-radius: 6px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+<h1>🤖 Spring AI + Ollama CRUD</h1>
+
+<!-- CREATE / UPDATE FORM -->
+<div class="card">
+    <h2 id="formTitle">➕ Add Person</h2>
+    <input id="personId" type="hidden"/>
+    <input id="nameInput" placeholder="Full Name" />
+    <input id="mobileInput" placeholder="Mobile Number" />
+    <input id="addressInput" placeholder="Address" />
+    <input id="imageInput" type="file" accept="image/*" />
+    <button onclick="savePerson()">💾 Save</button>
+    <button class="info" onclick="resetForm()">🔄 Reset</button>
+</div>
+
+<!-- ALL PERSONS TABLE -->
+<div class="card">
+    <h2>📋 All Persons</h2>
+    <button class="info" onclick="loadPersons()">🔃 Refresh</button>
+    <br/><br/>
+    <table>
+        <thead>
+        <tr><th>ID</th><th>Name</th><th>Mobile</th><th>Address</th><th>Image</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="personTable"></tbody>
+    </table>
+</div>
+
+<!-- AI CHAT -->
+<div class="card">
+    <h2>🧠 Ask Ollama AI</h2>
+    <textarea id="aiQuestion" rows="3" placeholder="Ask anything..."></textarea>
+    <button class="info" onclick="askAi()">🚀 Ask</button>
+    <div id="aiResponse" style="margin-top:10px; display:none"></div>
+</div>
+
+<script>
+    const BASE = "/api";
+
+    async function loadPersons() {
+        const res = await fetch(`${BASE}/persons`);
+        const data = await res.json();
+        const tbody = document.getElementById("personTable");
+        tbody.innerHTML = "";
+        data.forEach(p => {
+            const imgHtml = p.imageBase64
+                ? `<img class="thumb" src="data:${p.imageType};base64,${p.imageBase64}"/>`
+                : "No image";
+            tbody.innerHTML += `
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.name}</td>
+                <td>${p.mobileNo}</td>
+                <td>${p.address}</td>
+                <td>${imgHtml}</td>
+                <td>
+                    <button onclick="editPerson(${p.id})">✏️ Edit</button>
+                    <button class="danger" onclick="deletePerson(${p.id})">🗑️ Delete</button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    async function savePerson() {
+        const id = document.getElementById("personId").value;
+        const formData = new FormData();
+        formData.append("name", document.getElementById("nameInput").value);
+        formData.append("mobileNo", document.getElementById("mobileInput").value);
+        formData.append("address", document.getElementById("addressInput").value);
+        const imageFile = document.getElementById("imageInput").files[0];
+        if (imageFile) formData.append("image", imageFile);
+
+        const url = id ? `${BASE}/persons/${id}` : `${BASE}/persons`;
+        const method = id ? "PUT" : "POST";
+
+        const res = await fetch(url, { method, body: formData });
+        if (res.ok) {
+            alert(id ? "Updated!" : "Created!");
+            resetForm();
+            loadPersons();
+        } else {
+            const err = await res.text();
+            alert("Error: " + err);
+        }
+    }
+
+    async function editPerson(id) {
+        const res = await fetch(`${BASE}/persons/${id}`);
+        const p = await res.json();
+        document.getElementById("personId").value = p.id;
+        document.getElementById("nameInput").value = p.name;
+        document.getElementById("mobileInput").value = p.mobileNo;
+        document.getElementById("addressInput").value = p.address;
+        document.getElementById("formTitle").textContent = "✏️ Edit Person";
+    }
+
+    async function deletePerson(id) {
+        if (!confirm("Delete this person?")) return;
+        await fetch(`${BASE}/persons/${id}`, { method: "DELETE" });
+        loadPersons();
+    }
+
+    function resetForm() {
+        document.getElementById("personId").value = "";
+        document.getElementById("nameInput").value = "";
+        document.getElementById("mobileInput").value = "";
+        document.getElementById("addressInput").value = "";
+        document.getElementById("imageInput").value = "";
+        document.getElementById("formTitle").textContent = "➕ Add Person";
+    }
+
+        async function askAi() {
+            const question = document.getElementById("aiQuestion").value;
+            if (!question) return alert("Enter a question!");
+            const res = await fetch(`${BASE}/ai/ask`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question })
+            });
+            const text = await res.text();
+            const div = document.getElementById("aiResponse");
+            div.style.display = "block";
+            div.textContent = text;
+        }
+
+        // Load on start
+        loadPersons();
+</script>
+</body>
+</html>
