@@ -41,11 +41,10 @@ public class BuyingService {
     private Integer defaultDueDays;
 
     // ==========================================
-    // ✅ BUY a book
-    // ==========================================
+// ✅ BUY a book — FIXED
+// ==========================================
     @Transactional
-    public BuyingResponse buyBook(
-            BuyingRequest req) {
+    public BuyingResponse buyBook(BuyingRequest req) {
 
         // find book
         Book book = bookRepository
@@ -56,8 +55,7 @@ public class BuyingService {
                                         + req.getBookId()));
 
         // check book available
-        if (Boolean.FALSE
-                .equals(book.getIsActive())) {
+        if (Boolean.FALSE.equals(book.getIsActive())) {
             throw new RuntimeException(
                     "Book already bought: "
                             + book.getName());
@@ -80,26 +78,32 @@ public class BuyingService {
                     "User already bought this book!");
         }
 
-        // ✅ Calculate dates
+        // ✅ Calculate dates safely
         LocalDate issueDate = LocalDate.now();
-        int borrowDays = req.getBorrowDays() != null
-                ? req.getBorrowDays()
-                : defaultDueDays;
-        LocalDate dueDate =
-                issueDate.plusDays(borrowDays);
 
-        // ✅ Update book isActive → FALSE
+        // ✅ Use borrowDays if provided
+        // otherwise use default 14 days
+        int borrowDays = (req.getBorrowDays() != null
+                && req.getBorrowDays() > 0)
+                ? req.getBorrowDays()
+                : (defaultDueDays != null
+                   ? defaultDueDays : 14);
+
+        LocalDate dueDate = issueDate
+                .plusDays(borrowDays);
+
+        // update book status
         book.setIsActive(false);
         bookRepository.save(book);
 
-        // ✅ Save buying details with dates
+        // save buying record
         BuyingDetails saved =
                 buyingDetailsRepository.save(
                         BuyingDetails.builder()
                                 .book(book)
                                 .user(user)
-                                .issueDate(issueDate)
-                                .dueDate(dueDate)
+                                .issueDate(issueDate)   // ✅ always set
+                                .dueDate(dueDate)       // ✅ always set
                                 .fineAmount(BigDecimal.ZERO)
                                 .finePaid(false)
                                 .daysLate(0)
@@ -107,16 +111,20 @@ public class BuyingService {
                                 .build()
                 );
 
-        // ✅ Send email notification
-        emailService.sendBookIssuedEmail(saved);
+        // send email safely
+        try {
+            emailService.sendBookIssuedEmail(saved);
+        } catch (Exception e) {
+            log.warn("Email failed but buy success: {}",
+                    e.getMessage());
+        }
 
         log.info("Book '{}' bought by '{}'",
-                book.getName(),
-                user.getName());
+                book.getName(), user.getName());
 
         return toResponse(saved,
-                "Book bought successfully! "
-                        + "Due date: " + dueDate);
+                "Book bought successfully! Due: "
+                        + dueDate);
     }
 
     // ==========================================
@@ -307,40 +315,45 @@ public class BuyingService {
         // ✅ Calculate current fine
         // if still active and overdue
         BigDecimal currentFine =
-                buying.getFineAmount();
+                buying.getFineAmount() != null
+                        ? buying.getFineAmount()
+                        : BigDecimal.ZERO;
 
         if ("ACTIVE".equals(buying.getStatus())
                 && buying.getDueDate() != null
                 && LocalDate.now().isAfter(
                 buying.getDueDate())) {
+
             long daysLate = ChronoUnit.DAYS.between(
                     buying.getDueDate(),
                     LocalDate.now());
-            currentFine = finePerDay.multiply(
-                    BigDecimal.valueOf(daysLate));
+
+            currentFine = finePerDay != null
+                    ? finePerDay.multiply(
+                    BigDecimal.valueOf(daysLate))
+                    : BigDecimal.valueOf(daysLate * 10);
         }
 
         return BuyingResponse.builder()
                 .id(buying.getId())
                 .bookId(buying.getBook().getId())
-                .bookName(
-                        buying.getBook().getName())
-                .bookAuthor(
-                        buying.getBook().getAuthor())
-                .bookPrice(
-                        buying.getBook().getPrice())
+                .bookName(buying.getBook().getName())
+                .bookAuthor(buying.getBook().getAuthor())
+                .bookPrice(buying.getBook().getPrice())
                 .userId(buying.getUser().getId())
-                .userName(
-                        buying.getUser().getName())
-                .userEmail(
-                        buying.getUser().getEmail())
+                .userName(buying.getUser().getName())
+                .userEmail(buying.getUser().getEmail())
+                // ✅ All date fields safe
                 .issueDate(buying.getIssueDate())
                 .dueDate(buying.getDueDate())
                 .returnDate(buying.getReturnDate())
                 .fineAmount(currentFine)
-                .finePaid(buying.getFinePaid())
-                .daysLate(buying.getDaysLate())
-                .status(buying.getStatus())
+                .finePaid(buying.getFinePaid() != null
+                        ? buying.getFinePaid() : false)
+                .daysLate(buying.getDaysLate() != null
+                        ? buying.getDaysLate() : 0)
+                .status(buying.getStatus() != null
+                        ? buying.getStatus() : "ACTIVE")
                 .message(message)
                 .createdAt(buying.getCreatedAt())
                 .updatedAt(buying.getUpdatedAt())

@@ -37,60 +37,54 @@ public class FineScheduler {
         log.info("Running due date check...");
 
         LocalDate today = LocalDate.now();
-        LocalDate threeDaysLater =
-                today.plusDays(3);
+        LocalDate threeDaysLater = today.plusDays(3);
 
-        // Get all active records
         List<BuyingDetails> activeRecords =
                 buyingDetailsRepository
                         .findByStatus("ACTIVE");
 
         for (BuyingDetails buying : activeRecords) {
 
-            if (buying.getDueDate() == null)
+            // ✅ Skip if dueDate is null
+            if (buying.getDueDate() == null) {
+                log.warn("Skipping record {} - no dueDate",
+                        buying.getId());
                 continue;
+            }
 
             LocalDate dueDate = buying.getDueDate();
 
-            // ✅ OVERDUE — send overdue alert
+            // overdue
             if (today.isAfter(dueDate)) {
                 long daysLate = ChronoUnit.DAYS
                         .between(dueDate, today);
 
-                // Update fine in DB
-                BigDecimal fine = BigDecimal
-                        .valueOf(daysLate * 10);
-                buying.setFineAmount(fine);
+                buying.setFineAmount(
+                        BigDecimal.valueOf(daysLate * 10));
                 buying.setDaysLate((int) daysLate);
                 buying.setStatus("OVERDUE");
                 buyingDetailsRepository.save(buying);
 
-                // Send overdue alert email
-                emailService
-                        .sendOverdueAlertEmail(buying);
-
-                log.info("Overdue: {} - {} days late",
-                        buying.getBook().getName(),
-                        daysLate);
+                try {
+                    emailService
+                            .sendOverdueAlertEmail(buying);
+                } catch (Exception e) {
+                    log.warn("Overdue email failed: {}",
+                            e.getMessage());
+                }
             }
-
-            // ✅ DUE IN 3 DAYS — send reminder
-            else if (!dueDate.isAfter(
-                    threeDaysLater)
-                    && !today.isAfter(dueDate)) {
-                emailService
-                        .sendDueDateReminderEmail(
-                                buying);
-
-                log.info("Reminder sent: {} due {}",
-                        buying.getBook().getName(),
-                        dueDate);
+            // due in 3 days
+            else if (!dueDate.isAfter(threeDaysLater)) {
+                try {
+                    emailService
+                            .sendDueDateReminderEmail(buying);
+                } catch (Exception e) {
+                    log.warn("Reminder email failed: {}",
+                            e.getMessage());
+                }
             }
         }
-
-        log.info("Due date check complete!");
     }
-
     // ✅ Run every day at 10:00 AM
     // Update all overdue fines
     @Scheduled(cron = "0 0 10 * * *")
@@ -117,5 +111,6 @@ public class FineScheduler {
             log.info("Fine updated: {} = ₹{}",
                     buying.getBook().getName(), fine);
         }
+
     }
 }
