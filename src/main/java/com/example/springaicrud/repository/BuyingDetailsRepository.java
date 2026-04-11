@@ -26,4 +26,8 @@ public interface BuyingDetailsRepository
     // ✅ NEW: find latest purchase by bookId and userId
     Optional<BuyingDetails> findByBookIdAndUserId(
             Long bookId, Long userId);
+    List<BuyingDetails> findByStatus(String status);
+
+    // ✅ NEW: find unpaid fines
+    List<BuyingDetails> findByFinePaidFalse();
 }

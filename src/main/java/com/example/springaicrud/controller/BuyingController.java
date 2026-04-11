@@ -61,4 +61,12 @@ public class BuyingController {
         return ResponseEntity.ok(
                 buyingService.getByBook(bookId));
     }
+    // ✅ PAY FINE
+    @PostMapping("/pay-fine/{id}")
+    public ResponseEntity<BuyingResponse> payFine(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(
+                buyingService.payFine(id));
+    }
+
 }

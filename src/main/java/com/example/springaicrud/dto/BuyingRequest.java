@@ -11,4 +11,6 @@ public class BuyingRequest {
 
     @NotNull(message = "User ID is required")
     private Long userId;
+
+    private Integer borrowDays;
 }
