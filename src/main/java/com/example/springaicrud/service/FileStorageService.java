@@ -24,13 +24,13 @@ public class FileStorageService {
         this.uploadDir = resolveUploadDir(imagesDir);
     }
 
-    public String storeImage(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
+    public String storeImage(byte[] fileData, String originalFilename) throws IOException {
+        if (fileData == null || fileData.length == 0) {
             return null;
         }
 
         Files.createDirectories(uploadDir);
-        String original = Objects.toString(file.getOriginalFilename(), "");
+        String original = Objects.toString(originalFilename, "");
         String cleaned = StringUtils.cleanPath(original);
         String ext = "";
         int dot = cleaned.lastIndexOf('.');
@@ -43,7 +43,7 @@ public class FileStorageService {
             throw new IOException("Invalid file path");
         }
 
-        try (InputStream in = file.getInputStream()) {
+        try (InputStream in = new java.io.ByteArrayInputStream(fileData)) {
             Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
         }
 

@@ -32,14 +32,16 @@ public class PersonService {
 
         boolean hasImage = image != null && !image.isEmpty(); // ✅ Fix 2
 
+        byte[] imageBytes = hasImage ? image.getBytes() : null;
+
         Person person = Person.builder()
                 .name(name)
                 .mobileNo(mobileNo)
                 .address(address)
-                .image(hasImage ? image.getBytes() : null)
+                .image(imageBytes)
                 .imageName(hasImage ? image.getOriginalFilename() : null)
                 .imageType(hasImage ? image.getContentType() : null)
-                .imagePath(hasImage ? fileStorageService.storeImage(image) : null)
+                .imagePath(hasImage ? fileStorageService.storeImage(imageBytes, image.getOriginalFilename()) : null)
                 .build();
 
         Person saved = personRepository.saveAndFlush(person);
@@ -84,11 +86,12 @@ public class PersonService {
         person.setAddress(address);
 
         if (image != null && !image.isEmpty()) {
-            person.setImage(image.getBytes());
+            byte[] imageBytes = image.getBytes();
+            person.setImage(imageBytes);
             person.setImageName(image.getOriginalFilename());
             person.setImageType(image.getContentType());
             fileStorageService.deleteIfExists(person.getImagePath());
-            person.setImagePath(fileStorageService.storeImage(image));
+            person.setImagePath(fileStorageService.storeImage(imageBytes, image.getOriginalFilename()));
 
             String imageUrl = BASE_URL + "/api/persons/"
                     + id + "/image";

@@ -49,3 +49,7 @@ Thumbs.db
 .env.local
 .env.production
 .env.development
+
+### Uploaded Images ###
+src/main/resources/images/
+src/resources/images/
