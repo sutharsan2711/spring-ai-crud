@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
+@SuppressWarnings("null")
 public class FileStorageService {
 
     private final Path uploadDir;

@@ -15,6 +15,7 @@ import java.util.List;
 @RequestMapping("/api/persons")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@SuppressWarnings("null")
 public class PersonController {
 
     private final PersonService personService;

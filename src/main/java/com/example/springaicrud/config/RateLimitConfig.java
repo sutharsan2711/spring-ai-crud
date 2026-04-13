@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
+@SuppressWarnings("deprecation")
 public class RateLimitConfig {
 
     // ✅ Cache to store rate limit buckets

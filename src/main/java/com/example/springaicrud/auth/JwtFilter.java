@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter
         .OncePerRequestFilter;
+import org.springframework.lang.NonNull;
 
 import java.io.IOException;
 
@@ -33,9 +34,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest  request,
-            HttpServletResponse response,
-            FilterChain         chain)
+            @NonNull HttpServletRequest  request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain         chain)
             throws ServletException, IOException {
 
         String header = request

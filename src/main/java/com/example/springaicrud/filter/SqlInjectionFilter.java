@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter
         .OncePerRequestFilter;
+import org.springframework.lang.NonNull;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,9 +66,9 @@ public class SqlInjectionFilter
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest  request,
-            HttpServletResponse response,
-            FilterChain         chain)
+            @NonNull HttpServletRequest  request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain         chain)
             throws ServletException, IOException {
 
         // ✅ Check URL parameters
@@ -172,7 +173,7 @@ public class SqlInjectionFilter
     // ✅ Skip filter for specific URLs
     @Override
     protected boolean shouldNotFilter(
-            HttpServletRequest request) {
+            @NonNull HttpServletRequest request) {
         String path = request.getRequestURI();
         // skip for image uploads
         return path.contains("/image");

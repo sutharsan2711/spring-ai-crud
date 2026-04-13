@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class BookCategoryService {
 
     private final BookCategoryRepository

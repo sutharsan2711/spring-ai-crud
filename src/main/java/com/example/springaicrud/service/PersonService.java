@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 @Slf4j                                      // ✅ Fix 1: Add @Slf4j
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class PersonService {
 
     private final PersonRepository personRepository;

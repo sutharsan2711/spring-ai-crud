@@ -12,8 +12,8 @@ import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;  // ✅ Add this
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter
         .OncePerRequestFilter;
@@ -33,9 +33,9 @@ public class RateLimitFilter
 
     @Override
     protected void doFilterInternal(
-            HttpServletRequest  request,
-            HttpServletResponse response,
-            FilterChain         chain)
+            @NonNull HttpServletRequest  request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain         chain)
             throws ServletException, IOException {
 
         String clientIp =
