@@ -8,11 +8,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "buying_details")
-// ✅ All these are required
-@Data
+@Getter          // ✅ getUser(), getBook() etc
+@Setter          // ✅ setReturnDate() etc
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder           // ✅ generates builder()
+@Builder
 public class BuyingDetails {
 
     @Id

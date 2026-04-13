@@ -1,13 +1,13 @@
 package com.example.springaicrud.dto;
 
 import lombok.*;
-
 import java.util.Date;
 
-@Data
+@Getter          // ✅ generates getters
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder         // ✅ generates builder()
 public class AuthResponse {
     private Long   id;
     private String name;
@@ -16,7 +16,6 @@ public class AuthResponse {
     private String roleName;
     private String token;
     private String message;
-
-    private Date loginTime;
+    private Date   loginTime;
     private Date   expTime;
 }

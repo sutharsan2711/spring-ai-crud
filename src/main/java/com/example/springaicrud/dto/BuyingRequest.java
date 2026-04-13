@@ -1,18 +1,19 @@
 package com.example.springaicrud.dto;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.*;
 
-// ✅ @Data generates all getters/setters
-@Data
+@Getter          // ✅ getBookId(), getUserId()
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class BuyingRequest {
 
     @NotNull(message = "Book ID is required")
-    private Long bookId;       // ✅ getBookId()
+    private Long bookId;
 
     @NotNull(message = "User ID is required")
-    private Long userId;       // ✅ getUserId()
+    private Long userId;
 
-    // ✅ borrowDays field was missing
-    private Integer borrowDays; // ✅ getBorrowDays()
+    private Integer borrowDays;
 }
