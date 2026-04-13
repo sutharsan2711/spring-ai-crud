@@ -2,11 +2,16 @@ package com.example.springaicrud.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "book")
+// ✅ These annotations generate
+// getName(), setIsActive(), builder() etc.
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,34 +19,40 @@ import java.time.LocalDateTime;
 public class Book {
 
         @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        @GeneratedValue(strategy =
+                GenerationType.IDENTITY)
         private Long id;
 
         @Column(nullable = false)
-        private String name;
+        private String name;          // ✅ getName()
 
         @Column(nullable = false)
         private String author;
 
         @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn(name = "category_id", nullable = false)
+        @JoinColumn(
+                name     = "category_id",
+                nullable = false)
         private BookCategory category;
 
         @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn(name = "admin_id", nullable = false)
+        @JoinColumn(
+                name     = "admin_id",
+                nullable = false)
         private User admin;
 
-        // ✅ NEW: book price
         @Column(nullable = false,
                 precision = 10, scale = 2)
         private BigDecimal price;
 
-        // ✅ NEW: TRUE  = book available (not bought)
-        //         FALSE = book bought (not available)
-        @Column(name = "is_active", nullable = false)
-        private Boolean isActive;
+        // ✅ isActive field
+        // setIsActive() / getIsActive()
+        @Column(name = "is_active",
+                nullable = false)
+        private Boolean isActive;     // ✅ setIsActive()
 
-        @Column(name = "created_at", updatable = false)
+        @Column(name = "created_at",
+                updatable = false)
         private LocalDateTime createdAt;
 
         @Column(name = "updated_at")
@@ -52,7 +63,6 @@ public class Book {
                 LocalDateTime now = LocalDateTime.now();
                 this.createdAt = now;
                 this.updatedAt = now;
-                // default active = true (available)
                 if (this.isActive == null) {
                         this.isActive = true;
                 }
