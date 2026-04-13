@@ -1,8 +1,7 @@
 package com.example.springaicrud.exception;
 
 import org.springframework.http.*;
-import org.springframework.validation
-        .FieldError;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind
         .MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -13,23 +12,24 @@ import java.util.*;
 public class GlobalExceptionHandler {
 
     // ✅ Validation errors
-    // e.g. wrong email format, short password
+    // e.g. @Email, @NotBlank, @Size fails
     @ExceptionHandler(
             MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>>
     handleValidation(
-            MethodArgumentNotValidException ex) {
-
+            MethodArgumentNotValidException
+                    ex) {
         Map<String, Object> errors =
                 new LinkedHashMap<>();
         errors.put("status", 400);
 
-        // collect all field errors
         List<String> messages = new ArrayList<>();
         for (FieldError fe :
-                ex.getBindingResult().getFieldErrors()) {
+                ex.getBindingResult()
+                        .getFieldErrors()) {
             messages.add(fe.getField()
-                    + ": " + fe.getDefaultMessage());
+                    + ": "
+                    + fe.getDefaultMessage());
         }
         errors.put("errors", messages);
         errors.put("timestamp", new Date());
@@ -40,15 +40,36 @@ public class GlobalExceptionHandler {
     }
 
     // ✅ Runtime errors
-    // e.g. email not found, wrong password
+    // e.g. Email not found, Wrong password
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>>
     handleRuntime(RuntimeException ex) {
 
+        // ✅ Check if it is rate limit error
+        // from RateLimitFilter message
+        if (ex.getMessage() != null
+                && ex.getMessage().contains(
+                "Rate limit")) {
+
+            Map<String, Object> error =
+                    new LinkedHashMap<>();
+            error.put("status", 429);
+            error.put("error",
+                    "Too Many Requests");
+            error.put("message",
+                    ex.getMessage());
+            error.put("timestamp", new Date());
+
+            return ResponseEntity
+                    .status(
+                            HttpStatus.TOO_MANY_REQUESTS)
+                    .body(error);
+        }
+
         Map<String, Object> error =
                 new LinkedHashMap<>();
-        error.put("status",    400);
-        error.put("message",   ex.getMessage());
+        error.put("status", 400);
+        error.put("message", ex.getMessage());
         error.put("timestamp", new Date());
 
         return ResponseEntity
@@ -63,12 +84,13 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> error =
                 new LinkedHashMap<>();
-        error.put("status",    500);
-        error.put("message",   ex.getMessage());
+        error.put("status", 500);
+        error.put("message", ex.getMessage());
         error.put("timestamp", new Date());
 
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .status(
+                        HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(error);
     }
 }

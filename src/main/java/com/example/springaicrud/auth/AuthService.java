@@ -3,10 +3,12 @@ package com.example.springaicrud.auth;
 import com.example.springaicrud.dto.*;
 import com.example.springaicrud.entity.*;
 import com.example.springaicrud.repository.*;
+import com.example.springaicrud.validation
+        .InputValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password
-        .PasswordEncoder;
+import org.springframework.security.crypto
+        .password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -18,21 +20,35 @@ public class AuthService {
     private final RoleRepository  roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil         jwtUtil;
+    private final InputValidator  validator;
 
     // ==========================================
-    // ✅ SIGNUP
+    // ✅ SIGNUP with validation
     // ==========================================
-    public AuthResponse signup(SignupRequest req) {
+    public AuthResponse signup(
+            SignupRequest req) {
+
+        // ✅ Validate all inputs
+        validator.validateName(req.getName());
+        validator.validateEmail(req.getEmail());
+        validator.validatePassword(
+                req.getPassword());
+
+        // ✅ Sanitize inputs
+        String cleanName =
+                validator.sanitize(req.getName());
+        String cleanEmail =
+                req.getEmail().trim().toLowerCase();
 
         // check email exists
         if (userRepository
-                .existsByEmail(req.getEmail())) {
+                .existsByEmail(cleanEmail)) {
             throw new RuntimeException(
                     "Email already registered: "
-                            + req.getEmail());
+                            + cleanEmail);
         }
 
-        // find default USER role
+        // find USER role
         Role userRole = roleRepository
                 .findByName("USER")
                 .orElseThrow(() ->
@@ -44,24 +60,22 @@ public class AuthService {
                 passwordEncoder.encode(
                         req.getPassword());
 
-        log.info("Signing up: {}", req.getEmail());
+        log.info("Signup: {}", cleanEmail);
 
-        // save user
         User saved = userRepository.save(
                 User.builder()
-                        .name(req.getName())
-                        .email(req.getEmail())
+                        .name(cleanName)
+                        .email(cleanEmail)
                         .password(encrypted)
                         .role(userRole)
                         .build()
         );
 
-        // ✅ Generate token WITH userId & roleId
         String token = jwtUtil.generateToken(
-                saved.getEmail(),           // email
-                saved.getId(),              // userId
-                saved.getRole().getId(),    // roleId
-                saved.getRole().getName()   // roleName
+                saved.getEmail(),
+                saved.getId(),
+                saved.getRole().getId(),
+                saved.getRole().getName()
         );
 
         return AuthResponse.builder()
@@ -69,26 +83,43 @@ public class AuthService {
                 .name(saved.getName())
                 .email(saved.getEmail())
                 .roleId(saved.getRole().getId())
-                .roleName(saved.getRole().getName())
+                .roleName(
+                        saved.getRole().getName())
                 .token(token)
+                .loginTime(
+                        jwtUtil.extractLoginTime(
+                                token))
+                .expTime(
+                        jwtUtil.extractExpTime(
+                                token))
                 .message("Signup successful!")
-                .loginTime(jwtUtil.extractLoginTime(token))
-                .expTime(jwtUtil.extractExpTime(token))
                 .build();
     }
 
     // ==========================================
-    // ✅ LOGIN
+    // ✅ LOGIN with validation
     // ==========================================
-    public AuthResponse login(LoginRequest req) {
+    public AuthResponse login(
+            LoginRequest req) {
 
-        // find user by email
+        // ✅ Validate inputs
+        validator.validateEmail(req.getEmail());
+        if (req.getPassword() == null
+                || req.getPassword().isEmpty()) {
+            throw new RuntimeException(
+                    "Password is required!");
+        }
+
+        String cleanEmail =
+                req.getEmail().trim().toLowerCase();
+
+        // find user
         User user = userRepository
-                .findByEmail(req.getEmail())
+                .findByEmail(cleanEmail)
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Email not found: "
-                                        + req.getEmail()));
+                                        + cleanEmail));
 
         // compare password
         boolean match = passwordEncoder.matches(
@@ -96,19 +127,20 @@ public class AuthService {
                 user.getPassword());
 
         if (!match) {
+            log.warn("Failed login attempt: {}",
+                    cleanEmail);
             throw new RuntimeException(
                     "Incorrect password!");
         }
 
         log.info("Login success: {}",
-                req.getEmail());
+                cleanEmail);
 
-        // ✅ Generate token WITH userId & roleId
         String token = jwtUtil.generateToken(
-                user.getEmail(),            // email
-                user.getId(),               // userId
-                user.getRole().getId(),     // roleId
-                user.getRole().getName()    // roleName
+                user.getEmail(),
+                user.getId(),
+                user.getRole().getId(),
+                user.getRole().getName()
         );
 
         return AuthResponse.builder()
@@ -116,11 +148,16 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .roleId(user.getRole().getId())
-                .roleName(user.getRole().getName())
+                .roleName(
+                        user.getRole().getName())
                 .token(token)
+                .loginTime(
+                        jwtUtil.extractLoginTime(
+                                token))
+                .expTime(
+                        jwtUtil.extractExpTime(
+                                token))
                 .message("Login successful!")
-                .loginTime(jwtUtil.extractLoginTime(token))
-                .expTime(jwtUtil.extractExpTime(token))
                 .build();
     }
 }

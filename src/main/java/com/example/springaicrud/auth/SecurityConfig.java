@@ -61,6 +61,8 @@ public class SecurityConfig {
 
     // ✅ Security rules
     @Bean
+    // ✅ Add security headers to filterChain
+    @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http) throws Exception {
         http
@@ -68,30 +70,38 @@ public class SecurityConfig {
                 .sessionManagement(s -> s
                         .sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
 
-                        // ✅ Public — no token needed
+                // ✅ Security Headers
+                .headers(headers -> headers
+                        // prevent clickjacking
+                        .frameOptions(frame ->
+                                frame.deny())
+                        // prevent MIME sniffing
+                        .contentTypeOptions(content ->
+                                content.disable())
+                        // XSS protection
+                        .xssProtection(xss ->
+                                xss.disable())
+                )
+
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/persons/*/image",
-                                "/",
-                                "/api/categories",
                                 "/api/categories/**",
-                                "/api/buying/**",
-                                "/api/books",
                                 "/api/books/**",
+                                "/",
                                 "/index.html",
                                 "/**/*.html",
                                 "/**/*.css",
                                 "/**/*.js"
                         ).permitAll()
-
-                        // 🔐 All other URLs need token
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
                         jwtFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter
+                                .class);
 
         return http.build();
     }
