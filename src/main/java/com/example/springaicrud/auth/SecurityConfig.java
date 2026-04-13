@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -73,15 +74,17 @@ public class SecurityConfig {
 
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(
-                                                                "/api/auth/**",
-                                                                "/api/persons/*/image",
-                                                                "/api/categories/**",
-                                                                "/api/books/**",
-                                                                "/",
-                                                                "/index.html",
-                                                                "/**/*.html",
-                                                                "/**/*.css",
-                                                                "/**/*.js")
+                                                                new AntPathRequestMatcher("/api/auth/**"),
+                                                                new AntPathRequestMatcher("/api/persons/**"),
+                                                                new AntPathRequestMatcher("/api/ai/**"),
+                                                                new AntPathRequestMatcher("/api/categories/**"),
+                                                                new AntPathRequestMatcher("/api/books/**"),
+                                                                new AntPathRequestMatcher("/"),
+                                                                new AntPathRequestMatcher("/index.html"),
+                                                                new AntPathRequestMatcher("/**/*.html"),
+                                                                new AntPathRequestMatcher("/**/*.css"),
+                                                                new AntPathRequestMatcher("/**/*.js")
+                                                )
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(
